@@ -1,5 +1,6 @@
-use std::iter::Peekable;
+use std::fmt::Debug;
 
+#[derive(Debug)]
 pub enum TokenKind {
     Number(i64),
     Plus,
@@ -8,9 +9,11 @@ pub enum TokenKind {
     Slash,
     LeftParen,
     RightParen,
-    EOF,
+    WhiteSpace,
+    Eof,
+    Bad,
 }
-
+#[derive(Debug)]
 pub struct TextSpan {
     start: usize,
     end: usize,
@@ -31,9 +34,10 @@ impl TextSpan {
     }
 }
 
+#[derive(Debug)]
 pub struct Token {
-    kind: TokenKind,
-    span: TextSpan,
+    pub(crate) kind: TokenKind,
+    pub(crate) span: TextSpan,
 }
 
 impl Token {
@@ -56,29 +60,83 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
-        if self.current_pos > self.input.len() {
-            return None;
-        }
         if self.current_pos == self.input.len() {
             let eof_char: char = '\0';
             self.current_pos += 1;
             return Some(Token::new(
-                TokenKind::EOF,
+                TokenKind::Eof,
                 TextSpan::new(0, 0, eof_char.to_string()),
             ));
         }
-
         let c = self.current_char();
-        if Self::is_number_start(&{
-            self.tokenize_number()
+        return c.map(|c|{
+            let start = self.current_pos;
+            let mut kind = TokenKind::Bad;
+            if Self::is_number_start(&c) {
+                let number = self.consumer_number();
+                kind = TokenKind::Number(number);
+            } else if Self::is_whitespace(&c){
+                self.consumer_whitespace();
+                kind= TokenKind::WhiteSpace;
+            }
+            else {
+                kind = self.consumer_punctuation();
+            }
+            let end = self.current_pos;
+            let literal = self.input[start..end].to_string();
+            let span = TextSpan::new(start, end, literal);
+            Token::new(kind, span)
+        });
+
+    }
+
+    fn consume(&mut self) -> Option<char> {
+        if self.current_pos >= self.input.len() {
+            return None;
+        }
+        let c = self.current_char();
+        self.current_pos += 1;
+        c
+    }
+    fn consumer_punctuation(&mut self) -> TokenKind{
+        let c = self.consume().unwrap();
+        match c {
+            '+' => TokenKind::Plus,
+            '-' => TokenKind::Minus,
+            '*' => TokenKind::Asterisk,
+            '/' => TokenKind::Slash,
+            '(' => TokenKind::LeftParen,
+            ')' => TokenKind::RightParen,
+            _   => TokenKind::Bad,
+        }
+    }
+    fn consumer_number(&mut self) -> i64 {
+        let mut number: i64 = 0;
+        while let Some(c) = self.current_char() {
+            if c.is_digit(10) {
+                self.consume();
+                number = number * 10 + c.to_digit(10).unwrap() as i64;
+            } else {
+                break;
+            }
+        }
+        number
+    }
+    fn consumer_whitespace(&mut self){
+        while let Some(c) = self.current_char() {
+            if c.is_whitespace() {
+                self.consume();
+            } else {
+                break;
+            }
         }
     }
 
-        
     fn is_number_start(c: &char) -> bool {
         c.is_digit(10)
     }
-    fn current_char(&self) -> char {
-        self.input.chars().nth(self.current_pos).unwrap()
+    fn is_whitespace(c: &char) -> bool { c.is_whitespace() }
+    fn current_char(&self) -> Option<char> {
+        self.input.chars().nth(self.current_pos)
     }
 }
