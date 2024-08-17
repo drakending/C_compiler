@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,Clone)]
 pub enum TokenKind {
     Number(i64),
     Plus,
@@ -13,7 +13,7 @@ pub enum TokenKind {
     Eof,
     Bad,
 }
-#[derive(Debug)]
+#[derive(Debug,PartialEq,Clone)]
 pub struct TextSpan {
     start: usize,
     end: usize,
@@ -34,7 +34,7 @@ impl TextSpan {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone,PartialEq)]
 pub struct Token {
     pub(crate) kind: TokenKind,
     pub(crate) span: TextSpan,
