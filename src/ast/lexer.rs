@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 
 #[derive(Debug,PartialEq,Clone)]
 pub enum TokenKind {
@@ -12,6 +12,23 @@ pub enum TokenKind {
     WhiteSpace,
     Eof,
     Bad,
+}
+
+impl Display for TokenKind{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenKind::Number(num) => write!(f,"Number({})",num),
+            TokenKind::Plus => write!(f,"Plus"),
+            TokenKind::Minus => write!(f,"Minus"),
+            TokenKind::Asterisk => write!(f,"Asterisk"),
+            TokenKind::Slash => write!(f,"Slash"),
+            TokenKind::LeftParen => write!(f,"LeftParen"),
+            TokenKind::RightParen => write!(f,"RightParen"),
+            TokenKind::WhiteSpace => write!(f,"WhiteSpace"),
+            TokenKind::Eof => write!(f,"Eof"),
+            TokenKind::Bad => write!(f,"Bad"),
+        }
+    }
 }
 #[derive(Debug,PartialEq,Clone)]
 pub struct TextSpan {
@@ -69,7 +86,7 @@ impl<'a> Lexer<'a> {
             ));
         }
         let c = self.current_char();
-        return c.map(|c|{
+        c.map(|c|{
             let start = self.current_pos;
             let mut kind = TokenKind::Bad;
             if Self::is_number_start(&c) {
@@ -86,7 +103,7 @@ impl<'a> Lexer<'a> {
             let literal = self.input[start..end].to_string();
             let span = TextSpan::new(start, end, literal);
             Token::new(kind, span)
-        });
+        })
 
     }
 

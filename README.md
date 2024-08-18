@@ -1,7 +1,7 @@
 # C compiler
 this is a C compiler with rust implementation.
 
-- [] Lexer
+- [√] Lexer
 - [] Parser
 - [] IR Generator
 - [] Machine code Generator
