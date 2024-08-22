@@ -10,7 +10,7 @@ use crate::ast::evaluator::ASTEvaluator;
 
 
 fn main() {
-    let input = "int a = 5;int b = a+ 10; a+b;";
+    let input = "int a = 5,b = a + 10; a = a+b; b = b + (a = a + b); a; ";
     let text = text::SourceText::new(input.to_string());
     let mut lexer = ast::lexer::Lexer::new(input);
     let mut tokens = Vec::new();

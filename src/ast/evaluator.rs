@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use crate::ast::{ASTAssignment, ASTBinaryExpression, ASTBinaryOperatorKind, ASTExpression, ASTNumberExpression, ASTStatement, ASTVariableExpression, ASTVisitor, GrammarVartype};
+use crate::ast::{ASTBinaryExpression, ASTBinaryOperatorKind, ASTExpression, ASTNumberExpression, ASTStatement, ASTVariableExpression, ASTVisitor, GrammarVartype, ASTAssignment, LeftValue};
 use crate::ast::lexer::TextSpan;
+use crate::ast::statement::{ASTDeclaration, ASTDeclarationList};
 
 pub struct ASTEvaluator{
     pub last_value:Option<i64>,
@@ -22,14 +23,19 @@ impl ASTVisitor for ASTEvaluator{
         self.do_visit_statement(statement);
     }
 
-    fn visit_assignment(&mut self, assignment: &ASTAssignment) {
-        self.do_visit_expression(&assignment.expr);
-        self.variable_map.insert(assignment.name.clone(),self.last_value.unwrap());
-    }
 
 
     fn visit_expression(&mut self, expr: &ASTExpression) {
         self.do_visit_expression(expr);
+    }
+
+    fn visit_assignment(&mut self, assignment: &ASTAssignment) {
+        self.do_visit_expression(&assignment.expr);
+        match &assignment.name { 
+            LeftValue::Variable(name)=> {
+                self.variable_map.insert(name.clone(),self.last_value.unwrap());
+            }
+        }
     }
 
     fn visit_number(&mut self, number: &ASTNumberExpression) {
@@ -46,6 +52,7 @@ impl ASTVisitor for ASTEvaluator{
             ASTBinaryOperatorKind::Sub => left - right,
             ASTBinaryOperatorKind::Mul => left * right,
             ASTBinaryOperatorKind::Div => left / right,
+            ASTBinaryOperatorKind::Equal => right,
         })
     }
     fn visit_error(&mut self, span: &TextSpan) {
@@ -54,5 +61,16 @@ impl ASTVisitor for ASTEvaluator{
 
     fn visit_variable(&mut self, variable: &ASTVariableExpression) {
         self.last_value= Some(*self.variable_map.get(&variable.name).unwrap());
+    }
+
+    fn visit_declaration_list(&mut self, declaration_list: &ASTDeclarationList) {
+        declaration_list.declare_list.iter().for_each(|decl| self.visit_declaration(decl));
+    }
+
+    fn visit_declaration(&mut self, declaration: &ASTDeclaration) {
+        if let ASTDeclaration::VariableDeclareWithInit(name,expr) = declaration {
+            self.do_visit_expression(expr);
+            self.variable_map.insert(name.clone(),self.last_value.unwrap());
+        }
     }
 }

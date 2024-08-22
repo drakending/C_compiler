@@ -20,6 +20,7 @@ pub enum TokenKind {
     Equal,
     SemiColon,
     WhiteSpace,
+    Comma,
     Eof,
     Bad,
     Identifier(String),
@@ -51,6 +52,7 @@ impl Display for TokenKind{
             TokenKind::Eof => write!(f,"Eof"),
             TokenKind::Bad => write!(f,"Bad"),
             TokenKind::Equal => write!(f,"Equal"),
+            TokenKind::Comma => write!(f,"Comma"),
             TokenKind::VarType(vartype) =>  write!(f, "{}", vartype),
             TokenKind::Identifier(name) => write!(f,"Identifier:{}",name),
         }
@@ -174,6 +176,7 @@ impl<'a> Lexer<'a> {
             ')' => TokenKind::RightParen,
             '=' => TokenKind::Equal,
             ';' => TokenKind::SemiColon,
+            ',' => TokenKind::Comma,
             _   => TokenKind::Bad,
         }
     }

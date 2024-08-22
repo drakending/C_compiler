@@ -1,10 +1,8 @@
 use std::cell::Cell;
-use std::env::var;
-use std::ops::Deref;
-use crate::ast::{ASTAssignment, ASTBinaryExpression, ASTBinaryOperator, ASTBinaryOperatorKind, ASTExpression, ASTNumberExpression, ASTPrinter, ASTStatementKind, ASTVariableExpression, GrammarVartype};
+
+use crate::ast::*;
 use crate::ast::lexer::TokenKind;
-use crate::ast::lexer::TokenKind::Eof;
-use crate::diagnostics::{DiagnosticBag, DiagnosticsBagCell};
+use crate::diagnostics::*;
 use super::ASTStatement;
 use super::lexer::{Lexer,Token};
 pub struct Counter{
@@ -34,7 +32,7 @@ impl Parser {
         Self{
             tokens:tokens.iter().filter(
                 |token| token.kind!=TokenKind::WhiteSpace
-            ).map(|token| token.clone()).collect(),
+            ).cloned().collect(),
             current:Counter::new(),
             diagnostics_bag,
         }
@@ -53,8 +51,8 @@ impl Parser {
         let token = self.current();
         match &token.kind { 
             TokenKind::VarType(vartype) =>{
-                let assignment =  self.parse_assignment();
-                ASTStatement::assignment(assignment)
+                let declaration_list  =  self.parse_declaration_list();
+                ASTStatement::declaration(declaration_list)
             },
             _ => {
                 let expr = self.parse_expression();
@@ -65,6 +63,49 @@ impl Parser {
         }
 
     }
+    fn parse_declaration_list(&mut self) -> ASTDeclarationList{
+        let vartype = self.parse_vartype().unwrap();
+        let mut declaration_list = ASTDeclarationList::new(vartype);
+        
+        loop{
+            let declaration = self.parse_declararion();
+            declaration_list.declare_list.push(declaration);
+            let current = self.consume().unwrap();
+            if(current.kind!=TokenKind::Comma) {
+                break;
+            }
+        }
+        
+        declaration_list
+    }
+    
+    fn parse_declararion(&mut self) -> ASTDeclaration{
+        let var = self.consume().unwrap().clone();
+        let ahead1 = self.current();
+        match &ahead1.kind {
+            TokenKind::Comma|TokenKind::SemiColon => {
+                if let TokenKind::Identifier(name)=var.kind{
+                    self.consume();
+                    return  ASTDeclaration::VariableDeclareDirect(name);
+                } else{
+                    panic!()
+                }
+            },
+            TokenKind::Equal => {
+                self.consume();
+                let expr = self.parse_expression();
+                if let TokenKind::Identifier(name)=var.kind{
+                    return  ASTDeclaration::VariableDeclareWithInit(name,expr);
+                } else{
+                    panic!()
+                }
+            },
+            _ => {
+                panic!()
+            }
+        }
+    }
+    
     fn parse_expression(&mut self) -> ASTExpression{
         self.parse_binary_expression(0)
     }
@@ -81,23 +122,7 @@ impl Parser {
             }
         }
     }
-    fn parse_assignment(&mut self) -> ASTAssignment{
-        let vartype = self.parse_vartype().unwrap();
-        let mut token = self.current().clone();
-        self.consume();
-        let name = if let TokenKind::Identifier(identifier) = token.kind {
-            identifier
-        } else {
-            self.diagnostics_bag.borrow_mut().report_unexpected_token(&TokenKind::Identifier("".to_string()),&token);
-            "bad identifer".to_string()
-        };
-        token = self.current().clone();
 
-        self.consume();
-        let expr = self.parse_expression();
-        self.consume();
-        ASTAssignment::new(vartype,name,expr)
-    }
     fn parse_binary_operator(&mut self) -> Option<ASTBinaryOperator>{
         let token = self.current();
         let kind = match token.kind {
@@ -105,6 +130,7 @@ impl Parser {
             TokenKind::Minus => Some(ASTBinaryOperatorKind::Sub),
             TokenKind::Asterisk=> Some(ASTBinaryOperatorKind::Mul),
             TokenKind::Slash => Some(ASTBinaryOperatorKind::Div),
+            TokenKind::Equal => Some(ASTBinaryOperatorKind::Equal),
             _ => {None}
         };
         kind.map(|kind|ASTBinaryOperator::new(kind,token.clone()))
@@ -115,12 +141,19 @@ impl Parser {
         let mut left = self.parse_primary_expression();
         while let Some(operator) = self.parse_binary_operator() {
             let operator_precedence = operator.precedence();
-            if operator_precedence<=precedence{
+            if operator_precedence < precedence || (operator_precedence == precedence && !operator.right_combined()){
                 break;
             }
             self.consume();
             let right = self.parse_binary_expression(operator_precedence);
-            left = ASTExpression::binary(operator,left,right)
+            match operator.kind { 
+                ASTBinaryOperatorKind::Equal => {
+                    left = ASTExpression::assignment(left,right)
+                }
+                _ => {
+                    left = ASTExpression::binary(operator,left,right)
+                }
+            }
         }
         left
     }
