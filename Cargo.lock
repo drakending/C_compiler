@@ -5,3 +5,8 @@ version = 3
 [[package]]
 name = "compiler"
 version = "0.1.0"
+
+[[patch.unused]]
+name = "termion"
+version = "1.5.5"
+source = "git+https://gitlab.redox-os.org/Jezza/termion.git?branch=windows-support#9e35f915e54ead30d02cf67c56eb56709f569ffd"

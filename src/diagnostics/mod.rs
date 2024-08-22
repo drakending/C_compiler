@@ -1,3 +1,5 @@
+pub mod printer;
+
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::ast::lexer::{TextSpan, Token, TokenKind};
@@ -52,3 +54,4 @@ impl DiagnosticBag{
         )
     }
 }
+

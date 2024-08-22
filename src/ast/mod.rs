@@ -1,6 +1,6 @@
 use std::fmt::format;
 use std::thread::panicking;
-use crate::ast::lexer::{TextSpan, Token, TokenKind};
+use crate::ast::lexer::{Lexer, TextSpan, Token, TokenKind};
 
 pub mod lexer;
 pub mod parser;
@@ -37,6 +37,9 @@ pub trait ASTVisitor {
             ASTStatementKind::Expression(expr) => {
                 self.visit_expression(expr);
             }
+            ASTStatementKind::Assignment(assignment) => {
+                self.visit_assignment(assignment);
+            }
         }
     }
     fn do_visit_expression(&mut self, expr:&ASTExpression){
@@ -47,16 +50,21 @@ pub trait ASTVisitor {
             ASTExpressionKind::Binary(binary) => {
                 self.visit_binary_expression(binary);
             }
+            ASTExpressionKind::Variable(variable)=>{
+                self.visit_variable(variable);
+            }
             ASTExpressionKind::Error(span) =>{
                 self.visit_error(span);
             }
         }
     }
     fn visit_statement(&mut self,statement:&ASTStatement);
+    fn visit_assignment(&mut self,assignment: &ASTAssignment);
     fn visit_expression(&mut self,expr:&ASTExpression);
     fn visit_number(&mut self,number:&ASTNumberExpression);
     fn visit_binary_expression(&mut self,binary:&ASTBinaryExpression);
     fn visit_error(&mut self,span:&TextSpan);
+    fn visit_variable(&mut self,variable:&ASTVariableExpression);
 }
 
 pub struct ASTPrinter{
@@ -70,6 +78,15 @@ impl ASTVisitor for ASTPrinter {
         self.do_visit_statement(statement);
         self.indent-=LEVEL_INDENT;
 
+    }
+
+    fn visit_assignment(&mut self, assignment: &ASTAssignment) {
+        self.print_with_indent("Assignment:");
+        self.indent+=LEVEL_INDENT;
+        self.print_with_indent(&format!("Vartype: {:?}",assignment.vartype));
+        self.print_with_indent(&format!("Name: {}",assignment.name));
+        self.do_visit_expression(&assignment.expr);
+        self.indent-=LEVEL_INDENT;
     }
 
     fn visit_expression(&mut self, expr: &ASTExpression) {
@@ -91,7 +108,11 @@ impl ASTVisitor for ASTPrinter {
         self.indent-=LEVEL_INDENT;
     }
     fn visit_error(&mut self, span: &TextSpan) {
-        self.print_with_indent(&format!("Error: {}",span));
+        self.print_with_indent(&format!("Error: {:?}",span));
+    }
+
+    fn visit_variable(&mut self, variable: &ASTVariableExpression) {
+        self.print_with_indent(&format!("Variable: {}",variable.name));
     }
 }
 impl ASTPrinter{
@@ -100,8 +121,19 @@ impl ASTPrinter{
     }
 }
 #[derive(Debug)]
+pub enum GrammarVartype{
+    Direct(lexer::VartypeKind),
+}
+
+impl GrammarVartype{
+    pub fn new( vartype:&lexer::VartypeKind) -> Self{
+        GrammarVartype::Direct(vartype.clone())
+    }
+}
+#[derive(Debug)]
 pub enum ASTStatementKind{
     Expression(ASTExpression),
+    Assignment(ASTAssignment),
 }
 #[derive(Debug)]
 pub struct ASTStatement{
@@ -109,16 +141,20 @@ pub struct ASTStatement{
 }
 
 impl ASTStatement {
-    pub fn new(kind:ASTStatementKind) -> Self{
-        ASTStatement {kind}
+    pub fn new(kind: ASTStatementKind) -> Self {
+        ASTStatement { kind }
     }
-    pub fn expression(expr:ASTExpression) -> Self{
+    pub fn expression(expr: ASTExpression) -> Self {
         ASTStatement::new(ASTStatementKind::Expression(expr))
+    }
+    pub fn assignment(assignment: ASTAssignment) -> Self {
+        ASTStatement::new(ASTStatementKind::Assignment(assignment))
     }
 }
 #[derive(Debug)]
 pub enum ASTExpressionKind{
     Number(ASTNumberExpression),
+    Variable(ASTVariableExpression),
     Binary(
         ASTBinaryExpression
     ),
@@ -130,7 +166,17 @@ pub enum ASTExpressionKind{
 pub struct ASTExpression{
     kind:ASTExpressionKind
 }
-
+#[derive(Debug)]
+pub struct ASTAssignment{
+    vartype: GrammarVartype,
+    name: String,
+    expr: ASTExpression
+}
+impl ASTAssignment{
+    pub fn new(vartype: GrammarVartype, name: String, expr: ASTExpression) -> Self{
+        ASTAssignment { vartype, name, expr }
+    }
+}
 impl ASTExpression {
     pub fn new(kind:ASTExpressionKind) -> Self{
         ASTExpression {kind}
@@ -141,7 +187,25 @@ impl ASTExpression {
     pub fn binary( operator:ASTBinaryOperator,left:ASTExpression,right:ASTExpression) -> Self{
         ASTExpression::new(ASTExpressionKind::Binary(ASTBinaryExpression::new(left,right,operator)))
     }
+    pub fn variable(name:String) -> Self{
+        ASTExpression::new(ASTExpressionKind::Variable(ASTVariableExpression::new(name)))
+    }
+    pub fn error(span:TextSpan) -> Self {
+        ASTExpression::new(ASTExpressionKind::Error(span))
+    }
 }
+
+#[derive(Debug)]
+pub struct ASTVariableExpression{
+    name:String
+}
+
+impl ASTVariableExpression {
+    pub fn new(name:String) -> Self {
+        ASTVariableExpression {name}
+    }
+}
+
 #[derive(Debug)]
 pub struct ASTNumberExpression{
     value:i64
