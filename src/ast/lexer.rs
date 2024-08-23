@@ -17,12 +17,17 @@ pub enum TokenKind {
     Slash,
     LeftParen,
     RightParen,
+    LeftBracket,
+    RightBracket,
+    LeftBrace,
+    RightBrace,
     Equal,
     SemiColon,
     WhiteSpace,
     Comma,
     Eof,
     Bad,
+    Return,
     Identifier(String),
     VarType(VartypeKind),
 }
@@ -32,7 +37,7 @@ impl Display for VartypeKind{
         match self {
             VartypeKind::Int => write!(f,"int"),
             VartypeKind::Float => write!(f,"float"),
-            VartypeKind::Double => write!(f,"double")
+            VartypeKind::Double => write!(f,"double"),
         }
     }
 }
@@ -53,6 +58,11 @@ impl Display for TokenKind{
             TokenKind::Bad => write!(f,"Bad"),
             TokenKind::Equal => write!(f,"Equal"),
             TokenKind::Comma => write!(f,"Comma"),
+            TokenKind::LeftBracket => write!(f,"LeftBracket"),
+            TokenKind::RightBracket => write!(f,"RightBracket"),
+            TokenKind::LeftBrace => write!(f,"LeftBrace"),
+            TokenKind::RightBrace => write!(f,"RightBrace"),
+            TokenKind::Return => write!(f,"Return"),
             TokenKind::VarType(vartype) =>  write!(f, "{}", vartype),
             TokenKind::Identifier(name) => write!(f,"Identifier:{}",name),
         }
@@ -109,6 +119,7 @@ impl<'a> Lexer<'a> {
         "int" => TokenKind::VarType(VartypeKind::Int),
         "float" => TokenKind::VarType(VartypeKind::Float),
         "double" => TokenKind::VarType(VartypeKind::Double),
+        "return" => TokenKind::Return,
     ];
         Self {
             input,
@@ -177,6 +188,10 @@ impl<'a> Lexer<'a> {
             '=' => TokenKind::Equal,
             ';' => TokenKind::SemiColon,
             ',' => TokenKind::Comma,
+            '[' => TokenKind::LeftBracket,
+            ']' => TokenKind::RightBracket,
+            '{' => TokenKind::LeftBrace,
+            '}' => TokenKind::RightBrace,
             _   => TokenKind::Bad,
         }
     }

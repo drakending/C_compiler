@@ -4,6 +4,8 @@ use crate::ast::{ASTExpression, GrammarVartype};
 pub enum ASTStatementKind{
     Expression(ASTExpression),
     Declaration(ASTDeclarationList),
+    Return(ASTExpression),
+    EmptyReturn,
 }
 #[derive(Debug)]
 pub struct ASTStatement{
@@ -19,6 +21,12 @@ impl ASTStatement {
     }
     pub fn declaration(declaration_list: ASTDeclarationList) -> Self {
         ASTStatement::new(ASTStatementKind::Declaration(declaration_list))
+    }
+    pub fn return_statement(expr: ASTExpression) -> Self {
+        ASTStatement::new(ASTStatementKind::Return(expr))
+    }
+    pub fn empty_return() -> Self {
+        ASTStatement::new(ASTStatementKind::EmptyReturn)
     }
 }
 

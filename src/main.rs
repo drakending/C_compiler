@@ -4,15 +4,19 @@ mod text;
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::fs::File;
+use std::io::{self,Read};
 use crate::ast::Ast;
 use crate::ast::parser::Parser;
-use crate::ast::evaluator::ASTEvaluator;
 
 
 fn main() {
-    let input = "int a = 5,b = a + 10; a = a+b; b = b + (a = a + b); a; ";
-    let text = text::SourceText::new(input.to_string());
-    let mut lexer = ast::lexer::Lexer::new(input);
+    let mut file = File::open("test.c").unwrap();
+    let mut input = String::new();
+    file.read_to_string(&mut input);
+    let file_str:&str = &input.clone();
+    let text = text::SourceText::new(input);
+    let mut lexer = ast::lexer::Lexer::new(file_str);
     let mut tokens = Vec::new();
     while let Some(token) = lexer.next_token(){
         tokens.push(token);
@@ -22,8 +26,8 @@ fn main() {
 
     let mut ast: Ast = Ast::new();
     let mut parser = Parser::new(tokens,diagnostics_bag.clone());
-    while let Some(stmt) = parser.next_statement(){
-        ast.add_statement(stmt);
+    while let Some(prog) = parser.next_program_unit(){
+        ast.add_program_unit(prog);
     }
     let diagnositcs_binding = diagnostics_bag.borrow();
     if diagnositcs_binding.diagnostics.len()>0{
@@ -38,7 +42,5 @@ fn main() {
         ast.visualize();
 
     }
-    let mut eval = ASTEvaluator::new();
-    ast.visit(&mut eval);
-    println!("{:?}",eval.last_value);
+
 }

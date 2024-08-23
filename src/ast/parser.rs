@@ -1,7 +1,9 @@
 use std::cell::Cell;
-
+use std::env::var;
 use crate::ast::*;
 use crate::ast::lexer::TokenKind;
+use crate::ast::lexer::TokenKind::Plus;
+use crate::ast::progranunit::*;
 use crate::diagnostics::*;
 use super::ASTStatement;
 use super::lexer::{Lexer,Token};
@@ -37,7 +39,26 @@ impl Parser {
             diagnostics_bag,
         }
     }
-
+    pub fn next_program_unit(&mut self) -> Option<ASTProgramunit>{
+        if self.is_at_end() {
+            return None;
+        }
+        Some(self.parse_program_unit())
+    }
+    pub fn parse_program_unit(&mut self) -> ASTProgramunit{
+        let token2 = self.peek(2);
+        match token2.kind { 
+            TokenKind::LeftParen =>{
+                let function = self.parse_function();
+                ASTProgramunit::function(function)
+            },
+            _ => {
+                let declaration_list  =  self.parse_declaration_list();
+                ASTProgramunit::declaration(declaration_list)
+            }
+        }
+        
+    }
     pub fn next_statement(&mut self) -> Option<ASTStatement>{
         if self.is_at_end() {
             return None;
@@ -54,14 +75,80 @@ impl Parser {
                 let declaration_list  =  self.parse_declaration_list();
                 ASTStatement::declaration(declaration_list)
             },
+            TokenKind::Return => {
+                self.consume();
+                let next_token = self.current();
+                if let TokenKind::SemiColon = next_token.kind{
+                    self.consume();
+                    return ASTStatement::empty_return();
+                }
+                let expr = self.parse_expression();
+                self.consume();
+                ASTStatement::return_statement(expr)
+            }
             _ => {
                 let expr = self.parse_expression();
                 self.consume();
-
                 ASTStatement::expression(expr)
             }
         }
 
+    }
+    fn parse_function_params(&mut self) -> ASTFunctonParam{
+        let var_type = self.parse_vartype().unwrap();
+        let name_token = self.consume().unwrap().clone();
+        if let TokenKind::Identifier(name)=name_token.kind{
+            ASTFunctonParam::new(var_type,name)
+        } else{
+            panic!()
+        }
+    }
+    fn parse_function(&mut self) -> ASTFunction {
+        let var_type = self.parse_vartype().unwrap();
+        let mut function = ASTFunction::new(var_type);
+        let name_token = self.consume().unwrap().clone();
+        if let TokenKind::Identifier(name)=name_token.kind{
+            function.name = name;
+        } else{
+            panic!()
+        }
+        let left_paren = self.consume().unwrap();
+        if let TokenKind::LeftParen=left_paren.kind{
+        } else{
+            panic!()
+        }
+        loop {
+            let current_token  = self.current();
+            match current_token.kind { 
+                TokenKind::RightParen =>{
+                    self.consume();
+                    break;
+                },
+                TokenKind::Comma => {
+                    self.consume();
+                    function.params.push(self.parse_function_params());
+
+                }
+                _ => {
+                    function.params.push(self.parse_function_params());
+                }
+            }
+        }
+        let left_brace = self.consume().unwrap();
+        if let TokenKind::LeftBrace=left_brace.kind{
+        } else{
+            panic!()
+        }
+        loop {
+            let statement = self.parse_statement();
+            function.statements.push(statement);
+            let current = self.current();
+            if(current.kind==TokenKind::RightBrace) {
+                self.consume();
+                break;
+            }
+        }
+        function
     }
     fn parse_declaration_list(&mut self) -> ASTDeclarationList{
         let vartype = self.parse_vartype().unwrap();
@@ -211,5 +298,6 @@ impl Parser {
         }
         token
     }
+
 
 }

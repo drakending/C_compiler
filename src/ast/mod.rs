@@ -3,29 +3,31 @@ use crate::ast::expression::*;
 use crate::ast::statement::*;
 use crate::ast::visitor::*;
 use crate::ast::printer::*;
+use crate::ast::progranunit::ASTProgramunit;
+
 pub mod lexer;
 pub mod parser;
-pub mod evaluator;
 
 pub mod statement;
 pub mod visitor;
 pub mod printer;
 mod expression;
+mod progranunit;
 
 pub struct Ast{
-    pub statements: Vec<ASTStatement>
+    pub program_units: Vec<ASTProgramunit>
 }
 
 impl Ast {
     pub fn new() -> Self{
-        Self{statements: Vec::new()}
+        Self{program_units: Vec::new()}
     }
-    pub fn add_statement(&mut self,statement:ASTStatement){
-        self.statements.push(statement);
+    pub fn add_program_unit(&mut self,program_unit:ASTProgramunit){
+        self.program_units.push(program_unit);
     }
     pub fn visit(&self,visitor:&mut dyn ASTVisitor){
-        for statement in &self.statements{
-            visitor.visit_statement(statement);
+        for program_unit in &self.program_units{
+            visitor.visit_program_unit(program_unit);
         }
     }
     pub fn visualize(&self){

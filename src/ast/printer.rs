@@ -1,5 +1,6 @@
 use crate::ast::*;
 use crate::ast::lexer::TextSpan;
+use crate::ast::progranunit::ASTFunction;
 use crate::ast::statement::ASTStatement;
 use crate::ast::visitor::ASTVisitor;
 
@@ -68,6 +69,31 @@ impl ASTVisitor for ASTPrinter {
                 self.do_visit_expression(expr);
             }
         }
+    }
+
+    fn visit_program_unit(&mut self, program_unit: &ASTProgramunit) {
+        self.print_with_indent("Program Unit:");
+        self.indent+=LEVEL_INDENT;
+        self.do_visit_program_unit(program_unit);
+        self.indent-=LEVEL_INDENT;
+    }
+
+    fn visit_function(&mut self, function: &ASTFunction) {
+        self.print_with_indent(&format!("Function: {}",function.name));
+        self.indent+=LEVEL_INDENT;
+        function.statements.iter().for_each(|x|self.visit_statement(x));
+        self.indent-=LEVEL_INDENT;
+    }
+
+    fn visit_return(&mut self, expr: &ASTExpression) {
+        self.print_with_indent("Return:");
+        self.indent+=LEVEL_INDENT;
+        self.do_visit_expression(expr);
+        self.indent-=LEVEL_INDENT;
+    }
+
+    fn visit_empty_return(&mut self) {
+        self.print_with_indent("Empty Return");
     }
 }
 
