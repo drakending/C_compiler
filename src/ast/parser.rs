@@ -1,12 +1,10 @@
 use std::cell::Cell;
-use std::env::var;
 use crate::ast::*;
 use crate::ast::lexer::TokenKind;
-use crate::ast::lexer::TokenKind::Plus;
 use crate::ast::progranunit::*;
 use crate::diagnostics::*;
 use super::ASTStatement;
-use super::lexer::{Lexer,Token};
+use super::lexer::*;
 pub struct Counter{
     count:Cell<usize>,
 }
