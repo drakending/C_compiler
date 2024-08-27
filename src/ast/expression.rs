@@ -1,16 +1,17 @@
 use std::fmt::Display;
 use crate::ast::LeftValue;
 use crate::ast::lexer::{TextSpan, Token};
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ASTExpressionKind{
     Number(ASTNumberExpression),
     Variable(ASTVariableExpression),
     Binary(ASTBinaryExpression),
     Error(TextSpan),
     Assignment(ASTAssignment),
+    FunctionCall(ASTFuncionCall),
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTExpression{
     pub(crate) kind:ASTExpressionKind
 }
@@ -31,12 +32,15 @@ impl ASTExpression {
     pub fn assignment(name:ASTExpression,expr:ASTExpression) -> Self{
         ASTExpression::new(ASTExpressionKind::Assignment(ASTAssignment::new(name,expr)))
     }
+    pub fn function_call(name:String,param_list:Vec<Box<ASTExpression>>) -> Self{
+        ASTExpression::new(ASTExpressionKind::FunctionCall(ASTFuncionCall::new(name,param_list)))
+    }
     pub fn error(span:TextSpan) -> Self {
         ASTExpression::new(ASTExpressionKind::Error(span))
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTVariableExpression{
     pub(crate) name:String
 }
@@ -47,7 +51,7 @@ impl ASTVariableExpression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTNumberExpression{
     pub(crate) value:i64
 }
@@ -98,7 +102,7 @@ impl ASTBinaryOperator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTBinaryExpression{
     pub(crate) left: Box<ASTExpression>,
     pub(crate) right: Box<ASTExpression>,
@@ -117,7 +121,7 @@ impl ASTBinaryExpression {
 
 
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTAssignment{
     pub(crate) name: LeftValue,
     pub(crate) expr: Box<ASTExpression>,
@@ -129,5 +133,16 @@ impl ASTAssignment{
             name: LeftValue::variable(name),
             expr: Box::new(expr),
         }
+    }
+}
+
+#[derive(Debug,Clone)]
+pub struct ASTFuncionCall{
+    pub(crate) name: String,
+    pub(crate) param_list: Vec<Box<ASTExpression>>,
+}
+impl ASTFuncionCall {
+    pub fn new(name:String,param_list:Vec<Box<ASTExpression>>) -> Self {
+        ASTFuncionCall { name, param_list }
     }
 }

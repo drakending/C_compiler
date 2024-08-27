@@ -1,5 +1,5 @@
 use crate::ast::expression::ASTBinaryExpression;
-use crate::ast::GrammarVartype;
+use crate::ast::{GrammarFunctiontype, GrammarVartype};
 use crate::ast::statement::*;
 
 #[derive(Debug)]
@@ -21,26 +21,27 @@ impl ASTProgramunit{
 }
 
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTFunction{
-    pub(crate) return_type:GrammarVartype,
+    pub(crate) function_type:GrammarFunctiontype,
     pub(crate) name:String,
     pub(crate) statements:Vec<ASTStatement>,
     pub(crate) params:Vec<ASTFunctonParam>,
 }
 
 impl ASTFunction{
-    pub fn new(vartype:GrammarVartype) -> Self{
+    pub fn new(function_type:GrammarFunctiontype,params:Vec<ASTFunctonParam>) -> Self{
         Self{
-            return_type:vartype,
+            function_type,
             name:String::new(),
             statements:Vec::new(),
-            params:Vec::new(),
+            params,
         }
     }
+    
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTFunctonParam{
     pub (crate) param_type:GrammarVartype,
     pub (crate) name:String,

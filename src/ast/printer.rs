@@ -95,6 +95,13 @@ impl ASTVisitor for ASTPrinter {
     fn visit_empty_return(&mut self) {
         self.print_with_indent("Empty Return");
     }
+
+    fn visit_function_call(&mut self, function_call: &ASTFuncionCall) {
+        self.print_with_indent(&format!("Function call: {}",function_call.name));
+        self.indent+=LEVEL_INDENT;
+        function_call.param_list.iter().for_each(|expr|self.do_visit_expression(expr));
+        self.indent-=LEVEL_INDENT;
+    }
 }
 
 impl ASTPrinter{

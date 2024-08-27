@@ -7,3 +7,4 @@ edition = "2021"
 termion = { git = "https://gitlab.redox-os.org/Jezza/termion.git", branch = "windows-support" }
 
 [dependencies]
+log = "0.4.22"

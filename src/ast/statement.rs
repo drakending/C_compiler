@@ -1,13 +1,13 @@
 use crate::ast::{ASTExpression, GrammarVartype};
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ASTStatementKind{
     Expression(ASTExpression),
     Declaration(ASTDeclarationList),
     Return(ASTExpression),
     EmptyReturn,
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTStatement{
     pub(crate) kind:ASTStatementKind,
 }
@@ -31,13 +31,13 @@ impl ASTStatement {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ASTDeclaration{
     VariableDeclareDirect(String),
     VariableDeclareWithInit(String,ASTExpression),
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ASTDeclarationList{
     pub(crate) vartype:GrammarVartype,
     pub(crate) declare_list:Vec<ASTDeclaration>

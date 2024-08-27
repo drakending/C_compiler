@@ -1,3 +1,4 @@
+use std::env::var;
 use std::fmt::Display;
 use crate::ast::expression::*;
 use crate::ast::statement::*;
@@ -7,7 +8,7 @@ use crate::ast::progranunit::ASTProgramunit;
 
 pub mod lexer;
 pub mod parser;
-
+pub mod evaluator;
 pub mod statement;
 pub mod visitor;
 pub mod printer;
@@ -35,18 +36,38 @@ impl Ast {
         self.visit(&mut printer);
     }
 }
+#[derive(Debug,Clone)]
+pub struct GrammarFunctiontype{
+    pub arguments:Vec<GrammarVartype>,
+    pub returntype:GrammarVartype
+}
 
-#[derive(Debug)]
+impl GrammarFunctiontype{
+    pub fn new(arguments:Vec<GrammarVartype>,returntype:GrammarVartype) -> Self{
+        GrammarFunctiontype{arguments,returntype}
+    }
+
+}
+
+#[derive(Debug,Clone)]
 pub enum GrammarVartype{
     Direct(lexer::VartypeKind),
+    Ref(Box<GrammarVartype>),
+    Function(Box<GrammarFunctiontype>)
 }
 impl GrammarVartype{
     pub fn new( vartype:&lexer::VartypeKind) -> Self{
         GrammarVartype::Direct(vartype.clone())
     }
+    pub fn Ref(vartype:GrammarVartype) -> Self{
+        GrammarVartype::Ref(Box::new(vartype))
+    }
+    pub fn Function(arguments:Vec<GrammarVartype>,returntype:GrammarVartype) -> Self {
+        GrammarVartype::Function(Box::new(GrammarFunctiontype::new(arguments,returntype)))
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum LeftValue {
     Variable(String),
 }

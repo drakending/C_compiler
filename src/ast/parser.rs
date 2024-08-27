@@ -90,7 +90,6 @@ impl Parser {
                 ASTStatement::expression(expr)
             }
         }
-
     }
     fn parse_function_params(&mut self) -> ASTFunctonParam{
         let var_type = self.parse_vartype().unwrap();
@@ -103,10 +102,10 @@ impl Parser {
     }
     fn parse_function(&mut self) -> ASTFunction {
         let var_type = self.parse_vartype().unwrap();
-        let mut function = ASTFunction::new(var_type);
         let name_token = self.consume().unwrap().clone();
+        let mut function_name;
         if let TokenKind::Identifier(name)=name_token.kind{
-            function.name = name;
+            function_name = name;
         } else{
             panic!()
         }
@@ -115,6 +114,8 @@ impl Parser {
         } else{
             panic!()
         }
+        let mut params = vec![];
+        let mut params_type = vec![];
         loop {
             let current_token  = self.current();
             match current_token.kind { 
@@ -124,11 +125,16 @@ impl Parser {
                 },
                 TokenKind::Comma => {
                     self.consume();
-                    function.params.push(self.parse_function_params());
-
+                    let param = self.parse_function_params();
+                    let param_type = param.param_type.clone();
+                    params.push(param);
+                    params_type.push(param_type);
                 }
                 _ => {
-                    function.params.push(self.parse_function_params());
+                    let param = self.parse_function_params();
+                    let param_type = param.param_type.clone();
+                    params.push(param);
+                    params_type.push(param_type);
                 }
             }
         }
@@ -137,6 +143,9 @@ impl Parser {
         } else{
             panic!()
         }
+        let function_type = GrammarFunctiontype::new(params_type,var_type);
+        let mut function =ASTFunction::new(function_type,params);
+        function.name = function_name;
         loop {
             let statement = self.parse_statement();
             function.statements.push(statement);
@@ -151,7 +160,6 @@ impl Parser {
     fn parse_declaration_list(&mut self) -> ASTDeclarationList{
         let vartype = self.parse_vartype().unwrap();
         let mut declaration_list = ASTDeclarationList::new(vartype);
-        
         loop{
             let declaration = self.parse_declararion();
             declaration_list.declare_list.push(declaration);
@@ -160,7 +168,6 @@ impl Parser {
                 break;
             }
         }
-        
         declaration_list
     }
     
@@ -256,8 +263,33 @@ impl Parser {
                 expr
             }
             TokenKind::Identifier(name) =>{
+                let name = name.clone();
                 self.consume();
-                ASTExpression::variable(name.clone())
+                let token1 = self.current();
+                if let TokenKind::LeftParen = token1.kind{
+                    self.consume();
+                    let mut param_list = vec![];
+                    loop {
+                        let token = self.current();
+                        match token.kind { 
+                            TokenKind::RightParen => {
+                                self.consume();
+                                break;
+                            }
+                            TokenKind::Comma => {
+                                self.consume();
+                            }
+                            _ => {
+                                let expr = self.parse_expression();
+                                param_list.push(Box::new(expr));
+                            }
+                        }
+                    }
+                    ASTExpression::function_call(name,param_list)
+                }
+                else {
+                    ASTExpression::variable(name.clone())
+                }
             }
             _ => {
                 self.diagnostics_bag.borrow_mut().report_expected_expression(token);

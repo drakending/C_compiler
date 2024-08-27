@@ -8,7 +8,7 @@ use std::fs::File;
 use std::io::{self,Read};
 use crate::ast::Ast;
 use crate::ast::parser::Parser;
-
+use crate::ast::evaluator::ASTEvaluator;
 
 fn main() {
     let mut file = File::open("test.c").unwrap();
@@ -42,5 +42,8 @@ fn main() {
         ast.visualize();
 
     }
+    let mut eval = ASTEvaluator::new();
+    ast.visit(&mut eval);
+    println!("{:?}",eval.last_value);
 
 }

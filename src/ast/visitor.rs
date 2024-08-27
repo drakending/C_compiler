@@ -48,6 +48,9 @@ pub trait ASTVisitor {
             ASTExpressionKind::Error(span) =>{
                 self.visit_error(span);
             }
+            ASTExpressionKind::FunctionCall(function_call) => {
+                self.visit_function_call(function_call);
+            }
         }
     }
     fn visit_statement(&mut self,statement:&ASTStatement);
@@ -63,4 +66,5 @@ pub trait ASTVisitor {
     fn visit_function(&mut self,function:&ASTFunction);
     fn visit_return(&mut self,expr:&ASTExpression);
     fn visit_empty_return(&mut self);
+    fn visit_function_call(&mut self,function_call:&ASTFuncionCall);
 }
